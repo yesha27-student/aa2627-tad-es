@@ -73,12 +73,13 @@ Non è necessario nessun account Google per compilare il modulo.
 
 ## I comandi di OpenCode
 
-Quattro comandi sono stati scritti per questo corso e funzionano solo in questo repository:
+Cinque comandi sono stati scritti per questo corso e funzionano solo in questo repository:
 
 - `/inizio`: scrive il proprio nome e l'indirizzo pubblico del repository;
 - `/crea es1`: crea la cartella dell'esercitazione, leggendo la consegna dal sito del corso;
 - `/verifica es1`: confronta il lavoro con i vincoli della consegna e dice quali non sono rispettati;
-- `/consegna es1`: controlla, pubblica e ricorda l'indirizzo da segnalare.
+- `/consegna es1`: controlla, pubblica e ricorda l'indirizzo da segnalare;
+- `/aggiorna`: porta i file del corso all'ultima versione del modello, senza toccare le esercitazioni.
 
 Gli altri sono di OpenCode e funzionano in qualsiasi cartella. I più utili:
 
