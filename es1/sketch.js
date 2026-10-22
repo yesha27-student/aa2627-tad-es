@@ -47,7 +47,7 @@ const DISC_CELL_W = 16; // larghezza di una cella
 const DISC_CELL_H = 40; // altezza di una cella
 
 // velocità con cui le celle del disco passano da verticali a orizzontali
-const MORPH_SPEED = 0.035; // più grande = cambiamento più rapido; un ciclo dura circa 3 s
+const MORPH_SPEED = 0.012; // per fotogramma: più grande = cambiamento più rapido; a 60 fps un ciclo dura circa 9 s
 
 // ---------- colori: solo bianco e nero ----------
 const COLOR_WHITE = 255;
@@ -55,6 +55,8 @@ const COLOR_BLACK = 0;
 
 function setup() {
   createCanvas(CANVAS_W, CANVAS_H);
+  // fissa i fotogrammi al secondo: senza, la velocità cambierebbe da browser a browser
+  frameRate(60);
   noStroke();
 }
 
