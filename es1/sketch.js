@@ -47,7 +47,7 @@ const DISC_CELL_W = 16; // larghezza di una cella
 const DISC_CELL_H = 40; // altezza di una cella
 
 // velocità con cui le celle del disco passano da verticali a orizzontali
-const MORPH_SPEED = 0.012; // per fotogramma: più grande = cambiamento più rapido; a 60 fps un ciclo dura circa 9 s
+const MORPH_SPEED = 0.7; // radianti al secondo: più grande = cambiamento più rapido; un ciclo dura circa 9 s
 
 // ---------- colori: solo bianco e nero ----------
 const COLOR_WHITE = 255;
@@ -55,8 +55,6 @@ const COLOR_BLACK = 0;
 
 function setup() {
   createCanvas(CANVAS_W, CANVAS_H);
-  // fissa i fotogrammi al secondo: senza, la velocità cambierebbe da browser a browser
-  frameRate(60);
   noStroke();
 }
 
@@ -66,7 +64,9 @@ function draw() {
   drawBackground();
 
   // 0 = celle verticali come all'inizio, 1 = orizzontali come lo sfondo
-  const phase = (1 - cos(frameCount * MORPH_SPEED)) / 2;
+  // millis() conta i millisecondi, non i fotogrammi: la velocità resta
+  // la stessa anche se un browser disegna più o meno fotogrammi al secondo
+  const phase = (1 - cos(millis() / 1000 * MORPH_SPEED)) / 2;
   const morph = smootherStep(phase);
   drawDisc(morph);
 }
