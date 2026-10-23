@@ -71,7 +71,10 @@ function draw() {
   // millis() conta i millisecondi, non i fotogrammi: la velocità resta
   // la stessa anche se un browser disegna più o meno fotogrammi al secondo
   const phase = (1 - cos(millis() / 1000 * MORPH_SPEED)) / 2;
-  const eased = smootherStep(phase);
+  // il blocco fra 0 e 1 evita che l'arrotondamento porti eased sopra 1:
+  // 1 - eased diventerebbe negativo e pow() darebbe NaN, lasciando il disco
+  // bianco per un fotogramma
+  const eased = constrain(smootherStep(phase), 0, 1);
   // comprime solo la parte finale del passaggio: il disco si stacca prima
   // dallo stato orizzontale, senza aspettare la fine della sosta
   const morph = 1 - pow(1 - eased, MATCH_DWELL);
