@@ -47,7 +47,11 @@ const DISC_CELL_W = 16; // larghezza di una cella
 const DISC_CELL_H = 40; // altezza di una cella
 
 // velocità con cui le celle del disco passano da verticali a orizzontali
-const MORPH_SPEED = 0.7; // radianti al secondo: più grande = cambiamento più rapido; un ciclo dura circa 9 s
+const MORPH_SPEED = 0.9; // radianti al secondo: più grande = cambiamento più rapido
+
+// quanto a lungo il disco resta indistinguibile dallo sfondo quando le celle
+// diventano orizzontali: 1 = sosta piena, valori più bassi = sosta più breve
+const MATCH_DWELL = 0.65;
 
 // ---------- colori: solo bianco e nero ----------
 const COLOR_WHITE = 255;
@@ -67,7 +71,10 @@ function draw() {
   // millis() conta i millisecondi, non i fotogrammi: la velocità resta
   // la stessa anche se un browser disegna più o meno fotogrammi al secondo
   const phase = (1 - cos(millis() / 1000 * MORPH_SPEED)) / 2;
-  const morph = smootherStep(phase);
+  const eased = smootherStep(phase);
+  // comprime solo la parte finale del passaggio: il disco si stacca prima
+  // dallo stato orizzontale, senza aspettare la fine della sosta
+  const morph = 1 - pow(1 - eased, MATCH_DWELL);
   drawDisc(morph);
 }
 
@@ -111,8 +118,8 @@ function drawDisc(morph) {
   const cellH = lerp(DISC_CELL_H, BG_CELL_H, morph);
 
   // quante celle servono per coprire il disco con questa dimensione
-  const halfCols = ceil(DISC_RADIUS / cellW) + 1;
-  const halfRows = ceil(DISC_RADIUS / cellH) + 1;
+  const halfCols = ceil(DISC_RADIUS / cellW) + 2;
+  const halfRows = ceil(DISC_RADIUS / cellH) + 2;
 
   // la maschera circolare resta ferma:
   // il clip del contesto basta, non servono beginClip()/endClip()
@@ -123,7 +130,8 @@ function drawDisc(morph) {
 
   // il disco viene prima ricoperto di bianco
   fill(COLOR_WHITE);
-  circle(CENTER_X, CENTER_Y, DISC_RADIUS * 2);
+  noStroke();
+  ellipse(CENTER_X, CENTER_Y, DISC_RADIUS * 2, DISC_RADIUS * 2);
 
   fill(COLOR_BLACK);
   rectMode(CENTER);
