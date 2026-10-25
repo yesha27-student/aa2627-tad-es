@@ -1,156 +1,142 @@
 /*
-  Illusione: Eye Jitter – Perceive Your Eye Moments (Ouchi Illusion)
-  (la pagina mostra proprio l'illusione di Ōuchi: il disco che si stacca e
-   galleggia sullo sfondo, soprattutto muovendo gli occhi)
-  Fonte: https://michaelbach.de/ot/mot-eyeJitter/index.html
+  Illusione: Ōuchi Illusion celebre effetto ottico statico creato nel 1977 dall'artista giapponese Hajime Ouchi
+  Sito: https://michaelbach.de/ot/mot-eyeJitter/index.html
 
-  Regola:
-    - Lo sfondo è una scacchiera di celle nere orizzontali, larghe 40 e alte
-      16, alternate a celle bianche della stessa misura: il colore dipende
-      dalla somma di riga e colonna.
-    - Al centro c'è un disco di raggio 120 pixel riempito con una scacchiera
-      che all'inizio ha le celle ruotate di 90 gradi: verticali, 16 x 40.
-    - Che cosa cambia dall'uno all'altro è l'orientamento dei rettangoli:
-      in orizzontale fuori dal disco, in verticale dentro. È la differenza
-      di direzione delle linee a far percepire il disco come un oggetto
-      separato, che galleggia sul fondo.
-    - Movimento: la maschera circolare e lo sfondo restano fermi; le celle
-      del disco cambiano progressivamente dimensione, finché diventano
-      orizzontali come quelle dello sfondo. A quel punto l'effetto scompare,
-      poi le celle tornano verticali e l'effetto riappare.
+  Regola: griglia di rettangoli alternati; nel cerchio le celle passano da
+  verticali a orizzontali e ritornano verticali.
 
   Parametri critici:
-    - BG_CELL_W / BG_CELL_H: forma dei moduli dello sfondo (40 x 16).
-    - DISC_CELL_W / DISC_CELL_H: forma dei moduli del disco all'inizio
-      (16 x 40), perpendicolari allo sfondo.
-    - MORPH_SPEED: velocità del passaggio da una forma all'altra.
-    - DISC_RADIUS: grandezza del disco.
-    - Effetto più evidente con i moduli del disco perpendicolari allo sfondo;
-      nessun effetto quando hanno la stessa forma e lo stesso orientamento.
+    CELL_W = 40, CELL_H = 16
+    CIRCLE_CELL_W = 16, CIRCLE_CELL_H = 40
+    pause verticali = 0.8 s, pausa orizzontale = 0.7 s
+    trasformazione verso l'orizzontale = 1.5 s, ritorno = 3 s
+    effect = 0: celle verticali; effect = 1: illusione assente
 */
 
-// ---------- tela ----------
-const CANVAS_W = 800;
-const CANVAS_H = 600;
+const WIDTH = 800;
+const HEIGHT = 600;
+const WHITE = 255;
+const BLACK = 0;
+const CELL_W = 40;
+const CELL_H = 16;
+const CENTER_X = WIDTH / 2;
+const CENTER_Y = HEIGHT / 2;
+const RADIUS = 120;
+const CIRCLE_CELL_W = 16;
+const CIRCLE_CELL_H = 40;
 
-// ---------- disco centrale ----------
-const CENTER_X = CANVAS_W / 2; // 400
-const CENTER_Y = CANVAS_H / 2; // 300
-const DISC_RADIUS = 120;
+const FPS = 30;
+const VERTICAL_PAUSE = 0.8;
+const TO_HORIZONTAL_DURATION = 1.5;
+const TO_VERTICAL_DURATION = 3;
+const HORIZONTAL_PAUSE = 0.7;
+const CYCLE_DURATION =
+  VERTICAL_PAUSE +
+  TO_HORIZONTAL_DURATION +
+  HORIZONTAL_PAUSE +
+  TO_VERTICAL_DURATION;
 
-// ---------- scacchiera dello sfondo: ferma, orizzontale ----------
-const BG_CELL_W = 40; // larghezza di una cella
-const BG_CELL_H = 16; // altezza di una cella
-
-// ---------- scacchiera del disco: parte verticale, girata di 90 gradi ----------
-const DISC_CELL_W = 16; // larghezza di una cella
-const DISC_CELL_H = 40; // altezza di una cella
-
-// velocità con cui le celle del disco passano da verticali a orizzontali
-const MORPH_SPEED = 0.9; // radianti al secondo: più grande = cambiamento più rapido
-
-// quanto a lungo il disco resta indistinguibile dallo sfondo quando le celle
-// diventano orizzontali: 1 = sosta piena, valori più bassi = sosta più breve
-const MATCH_DWELL = 0.65;
-
-// ---------- colori: solo bianco e nero ----------
-const COLOR_WHITE = 255;
-const COLOR_BLACK = 0;
+let backgroundLayer;
+let circleLayer;
 
 function setup() {
-  createCanvas(CANVAS_W, CANVAS_H);
+  pixelDensity(1);
+  createCanvas(WIDTH, HEIGHT);
+  frameRate(FPS);
   noStroke();
+
+  backgroundLayer = createGraphics(WIDTH, HEIGHT);
+  backgroundLayer.pixelDensity(1);
+  backgroundLayer.noStroke();
+  backgroundLayer.rectMode(CENTER);
+  backgroundLayer.background(WHITE);
+  backgroundLayer.fill(BLACK);
+
+  let columns = ceil(WIDTH / CELL_W) + 2;
+  let rows = ceil(HEIGHT / CELL_H) + 2;
+
+  for (let row = 0; row < rows; row++) {
+    for (let column = 0; column < columns; column++) {
+      if ((row + column) % 2 === 0) {
+        let x = -CELL_W / 2 + column * CELL_W;
+        let y = -CELL_H / 2 + row * CELL_H;
+        backgroundLayer.rect(x, y, CELL_W, CELL_H);
+      }
+    }
+  }
+
+  circleLayer = createGraphics(RADIUS * 2, RADIUS * 2);
+  circleLayer.pixelDensity(1);
 }
 
 function draw() {
-  background(COLOR_WHITE);
+  background(WHITE);
+  image(backgroundLayer, 0, 0);
 
-  drawBackground();
+  let elapsedTime = (frameCount / FPS) % CYCLE_DURATION;
+  let horizontalStart = VERTICAL_PAUSE + TO_HORIZONTAL_DURATION;
+  let verticalStart = horizontalStart + HORIZONTAL_PAUSE;
+  let effect = 0;
 
-  // 0 = celle verticali come all'inizio, 1 = orizzontali come lo sfondo
-  // millis() conta i millisecondi, non i fotogrammi: la velocità resta
-  // la stessa anche se un browser disegna più o meno fotogrammi al secondo
-  const phase = (1 - cos(millis() / 1000 * MORPH_SPEED)) / 2;
-  // il blocco fra 0 e 1 evita che l'arrotondamento porti eased sopra 1:
-  // 1 - eased diventerebbe negativo e pow() darebbe NaN, lasciando il disco
-  // bianco per un fotogramma
-  const eased = constrain(smootherStep(phase), 0, 1);
-  // comprime solo la parte finale del passaggio: il disco si stacca prima
-  // dallo stato orizzontale, senza aspettare la fine della sosta
-  const morph = 1 - pow(1 - eased, MATCH_DWELL);
-  drawDisc(morph);
-}
-
-// curva di easing più morbida del coseno: parte e arriva senza scatti
-function smootherStep(t) {
-  return t * t * t * (t * (t * 6 - 15) + 10);
-}
-
-// Scacchiera dello sfondo: celle nere orizzontali alternate a quelle bianche
-function drawBackground() {
-  // le celle in più ai bordi evitano che il motivo si interrompa sul bordo
-  const cols = ceil(CANVAS_W / BG_CELL_W) + 2;
-  const rows = ceil(CANVAS_H / BG_CELL_H) + 2;
-  const startX = -BG_CELL_W;
-  const startY = -BG_CELL_H;
-
-  // lo sfondo resta fermo: le celle mantengono la forma originale
-  const cellW = BG_CELL_W;
-  const cellH = BG_CELL_H;
-
-  rectMode(CENTER);
-  fill(COLOR_BLACK);
-
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < cols; col++) {
-      // la somma di riga e colonna alterna le celle come in una scacchiera
-      if ((row + col) % 2 === 0) {
-        const cellCenterX = startX + col * BG_CELL_W + BG_CELL_W / 2;
-        const cellCenterY = startY + row * BG_CELL_H + BG_CELL_H / 2;
-        rect(cellCenterX, cellCenterY, cellW, cellH);
-      }
-    }
+  if (elapsedTime >= VERTICAL_PAUSE && elapsedTime < horizontalStart) {
+    effect = smoothTransition(
+      elapsedTime - VERTICAL_PAUSE,
+      TO_HORIZONTAL_DURATION,
+      0,
+      1
+    );
+  } else if (elapsedTime >= horizontalStart && elapsedTime < verticalStart) {
+    effect = 1;
+  } else if (elapsedTime >= verticalStart) {
+    effect = smoothTransition(
+      elapsedTime - verticalStart,
+      TO_VERTICAL_DURATION,
+      1,
+      0
+    );
   }
+  drawCircle(effect);
 }
 
-// Scacchiera del disco: le celle cambiano dimensione fino a diventare
-// orizzontali come quelle dello sfondo, poi tornano verticali
-function drawDisc(morph) {
-  // dimensione delle celle a metà strada fra disco e sfondo
-  const cellW = lerp(DISC_CELL_W, BG_CELL_W, morph);
-  const cellH = lerp(DISC_CELL_H, BG_CELL_H, morph);
+function smoothTransition(time, duration, from, to) {
+  let progress = time / duration;
+  let easedProgress = (1 - cos(progress * PI)) / 2;
+  return lerp(from, to, easedProgress);
+}
 
-  // quante celle servono per coprire il disco con questa dimensione
-  const halfCols = ceil(DISC_RADIUS / cellW) + 2;
-  const halfRows = ceil(DISC_RADIUS / cellH) + 2;
+function drawCircle(effect) {
+  let cellW = CIRCLE_CELL_W + (CELL_W - CIRCLE_CELL_W) * effect;
+  let cellH = CIRCLE_CELL_H + (CELL_H - CIRCLE_CELL_H) * effect;
 
-  // la maschera circolare resta ferma:
-  // il clip del contesto basta, non servono beginClip()/endClip()
-  drawingContext.save();
-  drawingContext.beginPath();
-  drawingContext.arc(CENTER_X, CENTER_Y, DISC_RADIUS, 0, TWO_PI);
-  drawingContext.clip();
+  let halfColumns = ceil(RADIUS / cellW) + 2;
+  let halfRows = ceil(RADIUS / cellH) + 2;
 
-  // il disco viene prima ricoperto di bianco
-  fill(COLOR_WHITE);
-  noStroke();
-  ellipse(CENTER_X, CENTER_Y, DISC_RADIUS * 2, DISC_RADIUS * 2);
+  circleLayer.clear();
+  circleLayer.noStroke();
+  circleLayer.rectMode(CENTER);
 
-  fill(COLOR_BLACK);
-  rectMode(CENTER);
+  // beginClip/endClip definiscono il cerchio come maschera per le forme successive.
+  // push/pop limitano il ritaglio a questo disegno.
+  circleLayer.push();
+  circleLayer.beginClip();
+  circleLayer.circle(RADIUS, RADIUS, RADIUS * 2);
+  circleLayer.endClip();
+
+  circleLayer.fill(WHITE);
+  circleLayer.circle(RADIUS, RADIUS, RADIUS * 2);
+  circleLayer.fill(BLACK);
 
   for (let row = -halfRows; row <= halfRows; row++) {
-    for (let col = -halfCols; col <= halfCols; col++) {
-      // la somma di riga e colonna alterna le celle come in una scacchiera
-      if ((row + col) % 2 === 0) {
-        // lo scarto fa combaciare le celle con lo sfondo quando hanno
-        // la stessa dimensione, così il disco sparisce del tutto
-        const cellCenterX = CENTER_X + (col + 0.5) * cellW;
-        const cellCenterY = CENTER_Y + (row - 0.25) * cellH;
-        rect(cellCenterX, cellCenterY, cellW, cellH);
+    for (let column = -halfColumns; column <= halfColumns; column++) {
+      if ((row + column) % 2 === 0) {
+        let x = RADIUS + (column + 0.5) * cellW;
+        let y = RADIUS + (row - 0.25) * cellH;
+        circleLayer.rect(x, y, cellW, cellH);
       }
     }
   }
 
-  drawingContext.restore();
+  circleLayer.pop();
+
+  image(circleLayer, CENTER_X - RADIUS, CENTER_Y - RADIUS);
 }
