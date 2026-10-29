@@ -1,87 +1,101 @@
 /*
-  Illusione: Ōuchi Illusion celebre effetto ottico statico creato nel 1977 dall'artista giapponese Hajime Ouchi
-  Sito: https://michaelbach.de/ot/mot-eyeJitter/index.html
-
-  Regola: griglia di rettangoli alternati; nel cerchio le celle passano da
-  verticali a orizzontali e ritornano verticali.
-
-  Parametri critici:
-    CELL_W = 40, CELL_H = 16
-    CIRCLE_CELL_W = 16, CIRCLE_CELL_H = 40
-    pause verticali = 0.8 s, pausa orizzontale = 0.7 s
-    trasformazione verso l'orizzontale = 1.5 s, ritorno = 3 s
-    effect = 0: celle verticali; effect = 1: illusione assente
+Illusione: Ōuchi Illusion
+Fonte: https://michaelbach.de/ot/mot-eyeJitter/index.html
+Descrizione: Griglia di rettangoli alternati. All'interno del cerchio centrale, le celle passano da verticali a orizzontali e poi tornano verticali.
 */
 
-const WIDTH = 800;
-const HEIGHT = 600;
-const WHITE = 255;
-const BLACK = 0;
-const CELL_W = 40;
-const CELL_H = 16;
-const CENTER_X = WIDTH / 2;
-const CENTER_Y = HEIGHT / 2;
-const RADIUS = 120;
-const CIRCLE_CELL_W = 16;
-const CIRCLE_CELL_H = 40;
+// Dimensioni della tela
+let canvasWidth = 800;
+let canvasHeight = 592;
 
-const FPS = 30;
-const VERTICAL_PAUSE = 0.8;
-const TO_HORIZONTAL_DURATION = 1.5;
-const TO_VERTICAL_DURATION = 3;
-const HORIZONTAL_PAUSE = 0.7;
-const CYCLE_DURATION =
-  VERTICAL_PAUSE +
-  TO_HORIZONTAL_DURATION +
-  HORIZONTAL_PAUSE +
-  TO_VERTICAL_DURATION;
+// Colori
+let white = 255;
+let black = 0;
 
-let backgroundLayer;
+// Parametri della griglia di sfondo
+let bgCellWidth = 40;
+let bgCellHeight = 16;
+
+// Parametri del cerchio centrale
+let circleRadius = 120;
+let circleCellWidth = 16;
+let circleCellHeight = 40;
+
+// Parametri dell'animazione
+let frameRateValue = 30;
+let verticalPause = 0.8;        // secondi con celle verticali
+let toHorizontalDuration = 1.5; // secondi per passare a celle orizzontali
+let horizontalPause = 0.7;      // secondi con celle orizzontali
+let toVerticalDuration = 3;    // secondi per tornare a celle verticali
+
+// Valori calcolati
+let cycleDuration;
+let centerX;
+let centerY;
+let bgCenterParity;
+let bgGridOffsetX;
+let bgGridOffsetY;
+
+// Livelli grafici
+let bgLayer;
 let circleLayer;
 
 function setup() {
   pixelDensity(1);
-  createCanvas(WIDTH, HEIGHT);
-  frameRate(FPS);
+  createCanvas(canvasWidth, canvasHeight);
+  frameRate(frameRateValue);
   noStroke();
 
-  backgroundLayer = createGraphics(WIDTH, HEIGHT);
-  backgroundLayer.pixelDensity(1);
-  backgroundLayer.noStroke();
-  backgroundLayer.rectMode(CENTER);
-  backgroundLayer.background(WHITE);
-  backgroundLayer.fill(BLACK);
+  centerX = width / 2;
+  centerY = height / 2;
+  cycleDuration = verticalPause + toHorizontalDuration + horizontalPause + toVerticalDuration;
 
-  let columns = ceil(WIDTH / CELL_W) + 2;
-  let rows = ceil(HEIGHT / CELL_H) + 2;
+  // Crea la griglia di sfondo
+  bgLayer = createGraphics(canvasWidth, canvasHeight);
+  bgLayer.pixelDensity(1);
+  bgLayer.noStroke();
+  bgLayer.rectMode(CENTER);
+  bgLayer.background(white);
+  bgLayer.fill(black);
 
-  for (let row = 0; row < rows; row++) {
-    for (let column = 0; column < columns; column++) {
-      if ((row + column) % 2 === 0) {
-        let x = -CELL_W / 2 + column * CELL_W;
-        let y = -CELL_H / 2 + row * CELL_H;
-        backgroundLayer.rect(x, y, CELL_W, CELL_H);
+  let bgCols = ceil(canvasWidth / bgCellWidth) + 1;
+  let bgRows = ceil(canvasHeight / bgCellHeight) + 1;
+  let bgCenterCol = floor((bgCols - 1) / 2);
+  let bgCenterRow = floor((bgRows - 1) / 2);
+  bgCenterParity = (bgCenterCol + bgCenterRow) % 2;
+  bgGridOffsetX = bgCenterCol - (bgCols - 1) / 2;
+  bgGridOffsetY = bgCenterRow - (bgRows - 1) / 2;
+
+  for (let row = 0; row < bgRows; row++) {
+    for (let col = 0; col < bgCols; col++) {
+      if ((row + col) % 2 === 0) {
+        let x = canvasWidth / 2 + (col - (bgCols - 1) / 2) * bgCellWidth;
+        let y = canvasHeight / 2 + (row - (bgRows - 1) / 2) * bgCellHeight;
+        bgLayer.rect(x, y, bgCellWidth, bgCellHeight);
       }
     }
   }
 
-  circleLayer = createGraphics(RADIUS * 2, RADIUS * 2);
+  // Crea il livello per il cerchio centrale
+  circleLayer = createGraphics(circleRadius * 2, circleRadius * 2);
   circleLayer.pixelDensity(1);
 }
 
 function draw() {
-  background(WHITE);
-  image(backgroundLayer, 0, 0);
+  background(white);
+  image(bgLayer, 0, 0);
 
-  let elapsedTime = (frameCount / FPS) % CYCLE_DURATION;
-  let horizontalStart = VERTICAL_PAUSE + TO_HORIZONTAL_DURATION;
-  let verticalStart = horizontalStart + HORIZONTAL_PAUSE;
+  let elapsedTime = (frameCount / frameRateValue) % cycleDuration;
+  let horizontalStart = verticalPause + toHorizontalDuration;
+  let verticalStart = horizontalStart + horizontalPause;
   let effect = 0;
 
-  if (elapsedTime >= VERTICAL_PAUSE && elapsedTime < horizontalStart) {
+  // effect = 0 -> celle verticali (come lo sfondo)
+  // effect = 1 -> celle orizzontali (massimo contrasto)
+  if (elapsedTime >= verticalPause && elapsedTime < horizontalStart) {
     effect = smoothTransition(
-      elapsedTime - VERTICAL_PAUSE,
-      TO_HORIZONTAL_DURATION,
+      elapsedTime - verticalPause,
+      toHorizontalDuration,
       0,
       1
     );
@@ -90,11 +104,12 @@ function draw() {
   } else if (elapsedTime >= verticalStart) {
     effect = smoothTransition(
       elapsedTime - verticalStart,
-      TO_VERTICAL_DURATION,
+      toVerticalDuration,
       1,
       0
     );
   }
+
   drawCircle(effect);
 }
 
@@ -105,38 +120,39 @@ function smoothTransition(time, duration, from, to) {
 }
 
 function drawCircle(effect) {
-  let cellW = CIRCLE_CELL_W + (CELL_W - CIRCLE_CELL_W) * effect;
-  let cellH = CIRCLE_CELL_H + (CELL_H - CIRCLE_CELL_H) * effect;
+  // Interpola le dimensioni delle celle tra quelle del cerchio e quelle dello sfondo
+  let cellWidth = circleCellWidth + (bgCellWidth - circleCellWidth) * effect;
+  let cellHeight = circleCellHeight + (bgCellHeight - circleCellHeight) * effect;
 
-  let halfColumns = ceil(RADIUS / cellW) + 2;
-  let halfRows = ceil(RADIUS / cellH) + 2;
+  let halfCols = ceil(circleRadius / cellWidth) + 2;
+  let halfRows = ceil(circleRadius / cellHeight) + 2;
 
   circleLayer.clear();
   circleLayer.noStroke();
   circleLayer.rectMode(CENTER);
 
-  // beginClip/endClip definiscono il cerchio come maschera per le forme successive.
-  // push/pop limitano il ritaglio a questo disegno.
+  // Limita il disegno alla forma del cerchio
   circleLayer.push();
   circleLayer.beginClip();
-  circleLayer.circle(RADIUS, RADIUS, RADIUS * 2);
+  circleLayer.circle(circleRadius, circleRadius, circleRadius * 2);
   circleLayer.endClip();
 
-  circleLayer.fill(WHITE);
-  circleLayer.circle(RADIUS, RADIUS, RADIUS * 2);
-  circleLayer.fill(BLACK);
+  circleLayer.fill(white);
+  circleLayer.circle(circleRadius, circleRadius, circleRadius * 2);
+  circleLayer.fill(black);
 
+  // Disegna la griglia a scacchi all'interno del cerchio
   for (let row = -halfRows; row <= halfRows; row++) {
-    for (let column = -halfColumns; column <= halfColumns; column++) {
-      if ((row + column) % 2 === 0) {
-        let x = RADIUS + (column + 0.5) * cellW;
-        let y = RADIUS + (row - 0.25) * cellH;
-        circleLayer.rect(x, y, cellW, cellH);
+    for (let col = -halfCols; col <= halfCols; col++) {
+      if ((row + col + bgCenterParity) % 2 === 0) {
+        let x = circleRadius + (col + bgGridOffsetX) * cellWidth;
+        let y = circleRadius + (row + bgGridOffsetY) * cellHeight;
+        circleLayer.rect(x, y, cellWidth, cellHeight);
       }
     }
   }
 
   circleLayer.pop();
 
-  image(circleLayer, CENTER_X - RADIUS, CENTER_Y - RADIUS);
+  image(circleLayer, centerX - circleRadius, centerY - circleRadius);
 }
