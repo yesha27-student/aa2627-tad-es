@@ -62,7 +62,7 @@ let diamondRadius = DIAMOND_RADIUS_ORIGINAL;
 
 // --- inizializzazione ---
 function setup() {
-  createCanvas(canvasWidth, canvasHeight);
+  createCanvas(600, 600);
   colorMode(HSL, 360, 100, 100);
   noStroke();
   initialHue = RED.h;
@@ -96,13 +96,13 @@ function createColors() {
 
 // --- disegno dei quadrati e dei rombi ---
 function drawArtwork(palette) {
-  let size = width / SQUARES_PER_SIDE;
+  let size = 600 / SQUARES_PER_SIDE;
 
   // Disegna i 64 quadrati
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
       fill(palette[SQUARE_COLORS[r][c]]);
-      rect(c * size, r * size, size, size);
+      rect(c * 600 / 8, r * 600 / 8, 600 / 8, 600 / 8);
     }
   }
 
@@ -123,8 +123,8 @@ function drawArtwork(palette) {
 
 // --- il mouse modifica tonalità e dimensione ---
 function mouseMoved() {
-  initialHue = (RED.h + map(mouseX, 0, width, -30, 30) + 360) % 360;
-  diamondRadius = map(mouseX, 0, width,
+  initialHue = (RED.h + map(mouseX, 0, 600, -30, 30) + 360) % 360;
+  diamondRadius = map(mouseX, 0, 600,
     DIAMOND_RADIUS_MIN, DIAMOND_RADIUS_MAX, true);
 
   colors = createColors();
