@@ -6,4 +6,6 @@ Il ciclo dura 6 secondi: le celle restano verticali per 0,8 secondi, passano all
 
 La pagina usa p5.js e si apre da [index.html](./index.html). I parametri dell’animazione e della griglia si possono modificare all’inizio di [sketch.js](./sketch.js).
 
+Versione online: [yesha27-student.github.io/aa2627-tad-es/es1/](https://yesha27-student.github.io/aa2627-tad-es/es1/).
+
 Fonte: [Michael Bach — Ōuchi illusion](https://michaelbach.de/ot/mot-eyeJitter/index.html).

@@ -41,6 +41,7 @@ dove `<cartella>` è il nome della cartella su cui si sta lavorando: `es1`, `es2
 
 - p5.js nella versione 2, caricata dal CDN nell'`index.html`: non aggiungere altre librerie senza chiederlo.
 - Se lo studente scrive o incolla codice di p5.js 1 (per esempio con `preload()`, oppure copiato dalle slide del corso, che usano ancora la versione 1), adattarlo alla versione 2 e dire in una riga che cosa è cambiato.
+- **`point()` non è affidabile nella versione 2.3.3** caricata dagli sketch: in Chrome perde buona parte dei punti con la coordinata x oltre 256, e nelle animazioni i punti sfarfallano. È un difetto noto di p5.js, corretto per una versione successiva. Se il codice usa `point()`, o lo si sta per usare, segnalarlo in una riga e proporre al suo posto `circle( x, y, 1 )`, o un cerchio un po' più grande.
 - Codice semplice e leggibile, anche a costo di essere più lungo: lo studente deve poterlo capire e modificare da sé.
 - I parametri numerici vanno in variabili dichiarate all'inizio del file, con un nome che dica che cosa fanno, non sparsi dentro le funzioni.
 - Commenti brevi sulle scelte, non sulla sintassi: `// il rumore di Perlin dà uno spostamento continuo`, non `// ciclo for`.

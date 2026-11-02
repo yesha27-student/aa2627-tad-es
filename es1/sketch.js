@@ -2,6 +2,7 @@
 Illusione: Ōuchi Illusion
 Fonte: https://michaelbach.de/ot/mot-eyeJitter/index.html
 Descrizione: Griglia di rettangoli alternati. All'interno del cerchio centrale, le celle passano da verticali a orizzontali e poi tornano verticali.
+Parametri critici: griglia di sfondo 40x16 px; nel cerchio, 16x40 px a effetto massimo e 40x16 px quando l'effetto scompare; raggio del cerchio 120 px.
 */
 
 // Dimensioni della tela
