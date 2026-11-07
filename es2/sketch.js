@@ -22,91 +22,124 @@ Regola cromatica: tre tinte principali (rosso, corallo e viola)
 sono distribuite su una griglia 8x8, secondo una disposizione
 prestabilita. I 16 rombi, collocati al centro dei blocchi 2x2,
 utilizzano il bianco e il nero.
-I colori sono definiti in HSL. Il movimento del mouse modifica
-gradualmente il tono della palette e la dimensione dei rombi.
-Con il clic si genera una variante cromatica: il tono cambia
-secondo valori casuali prestabiliti, mentre saturazione e
-luminosità subiscono piccole variazioni casuali.
-I rapporti tra le tinte originali vengono mantenuti.
+I colori sono definiti in OKLCH, con la luminosità e la crominanza
+delle tinte originali.
+Il movimento orizzontale del mouse modifica il tono della palette,
+quello verticale la dimensione dei rombi.
+Con il clic si genera una variante cromatica: il tono di base
+diventa casuale e le altre tinte si ricavano da esso.
+Lo spostamento del mouse conserva i rapporti fra le tinte.
 */
 
-// Dimensioni della tela
-let canvasWidth = 600;
-let canvasHeight = 600;
 
-// --- parametri dell'opera ---
+// Dimensioni tela
+let canvasWidth = 600, canvasHeight = 600;
+
+// Parametri dell'opera
 let SQUARES_PER_SIDE = 8;
 let DIAMOND_RADIUS_ORIGINAL = 0.59;
 let DIAMOND_RADIUS_MIN = 0.44;
 let DIAMOND_RADIUS_MAX = 0.74;
 
-// --- colori HSL originali ---
-let RED = { h: 1, s: 60, l: 54 };
-let CORAL = { h: 357, s: 82, l: 67 };
-let PURPLE = { h: 254, s: 23, l: 49 };
-let WHITE = { h: 20, s: 5, l: 85 };
-let BLACK = { h: 20, s: 6, l: 22 };
+// Colori OKLCH originali
+let RED = { h: 25.15, c: 0.175, l: 0.587 };
+let CORAL = { h: 19.77, c: 0.170, l: 0.683 };
+let PURPLE = { h: 293.81, c: 0.090, l: 0.527 };
+let WHITE = { h: 48.71, c: 0.003, l: 0.884 };
+let BLACK = { h: 48.49, c: 0.007, l: 0.341 };
 
-// --- mappe e legenda dei colori ---
-// R = Rosso, S = Corallo, P = Viola
+// Variazioni cromatiche
+let PALETTE_VARIATIONS = [
+  { red: 0, coral: 0, purple: 0 },
+  { red: 65, coral: 45, purple: 35 },
+  { red: 105, coral: 120, purple: 85 },
+  { red: 205, coral: 190, purple: 220 },
+  { red: 265, coral: 240, purple: 280 },
+  { red: 45, coral: 145, purple: 110 },
+  { red: 195, coral: 170, purple: 300 }
+];
+
+let currentPalette = 0;
+let tonoIniziale;
+let variazioneCasuale = 0;
+
+// Legenda dei colori:
+// R = rosso
+// S = corallo
+// P = viola
+// W = bianco
+// D = nero
+
+// Mappa quadrati (8x8)
 let SQUARE_COLORS = [
   'RPSRRSPR', 'PPSPPSPP', 'SRSSRRRS', 'SRPPPPSS',
   'PRSSRSRP', 'PRPSPPPS', 'RSSRSSRR', 'SPRPSRPS'
 ];
 
-// D = Nero, W = Bianco
-let DIAMOND_COLORS = ['DWWD', 'WDWD', 'DWDW', 'WDWD'];
+// Mappa rombi (4x4)
+let DIAMOND_COLORS = [
+  'DWWD', 'WDWD', 'DWDW', 'WDWD'
+];
 
-let initialHue, colors;
+let colors;
 let diamondRadius = DIAMOND_RADIUS_ORIGINAL;
 
-// --- inizializzazione ---
+// Inizializzazione
 function setup() {
-  createCanvas(600, 600);
-  colorMode(HSL, 360, 100, 100);
+  createCanvas(canvasWidth, canvasHeight);
+  colorMode(OKLCH, 1, 0.4, 360);
   noStroke();
-  initialHue = RED.h;
+
+  tonoIniziale = random(360);
+  variazioneCasuale = map(tonoIniziale, 0, 360, -10, 10);
+
   colors = createColors();
   noLoop();
 }
 
-// --- disegno ---
+// Disegno
 function draw() {
   background(colors.W);
   drawArtwork(colors);
 }
 
-// --- creazione della palette ---
+// Creazione palette
 function createColors() {
-  function makeColor(base) {
+  let variation = PALETTE_VARIATIONS[currentPalette];
+
+  // La palette originale non subisce variazioni casuali
+  let randomShift = currentPalette === 0 ? 0 : variazioneCasuale;
+
+  function makeColor(base, shift) {
     return color(
-      (base.h + initialHue - RED.h + 360) % 360,
-      base.s, base.l
+      base.l,
+      base.c,
+      (base.h + shift + randomShift + 360) % 360
     );
   }
 
   return {
-    R: makeColor(RED),
-    S: makeColor(CORAL),
-    P: makeColor(PURPLE),
-    W: makeColor(WHITE),
-    D: makeColor(BLACK)
+    R: makeColor(RED, variation.red),
+    S: makeColor(CORAL, variation.coral),
+    P: makeColor(PURPLE, variation.purple),
+    W: color(WHITE.l, WHITE.c, WHITE.h),
+    D: color(BLACK.l, BLACK.c, BLACK.h)
   };
 }
 
-// --- disegno dei quadrati e dei rombi ---
+// Disegno quadrati e rombi
 function drawArtwork(palette) {
-  let size = 600 / SQUARES_PER_SIDE;
+  let size = canvasWidth / SQUARES_PER_SIDE;
 
-  // Disegna i 64 quadrati
-  for (let r = 0; r < 8; r++) {
-    for (let c = 0; c < 8; c++) {
+  // 64 quadrati
+  for (let r = 0; r < SQUARES_PER_SIDE; r++) {
+    for (let c = 0; c < SQUARES_PER_SIDE; c++) {
       fill(palette[SQUARE_COLORS[r][c]]);
-      rect(c * 600 / 8, r * 600 / 8, 600 / 8, 600 / 8);
+      rect(c * size, r * size, size, size);
     }
   }
 
-  // Disegna i 16 rombi
+  // 16 rombi
   let radius = size * diamondRadius;
 
   for (let r = 0; r < 4; r++) {
@@ -115,39 +148,50 @@ function drawArtwork(palette) {
       let y = (r * 2 + 1) * size;
 
       fill(palette[DIAMOND_COLORS[r][c]]);
-      quad(x, y - radius, x + radius, y,
-        x, y + radius, x - radius, y);
+      quad(
+        x, y - radius,
+        x + radius, y,
+        x, y + radius,
+        x - radius, y
+      );
     }
   }
 }
 
-// --- il mouse modifica tonalità e dimensione ---
+// Movimento verticale del mouse
+function updateDiamondSize() {
+  diamondRadius = map(
+    constrain(mouseY, 0, height),
+    0, height,
+    DIAMOND_RADIUS_MIN, DIAMOND_RADIUS_MAX
+  );
+  redraw();
+}
+
 function mouseMoved() {
-  initialHue = (RED.h + map(mouseX, 0, 600, -30, 30) + 360) % 360;
-  diamondRadius = map(mouseX, 0, 600,
-    DIAMOND_RADIUS_MIN, DIAMOND_RADIUS_MAX, true);
-
-  colors = createColors();
-  redraw();
+  updateDiamondSize();
 }
 
-// --- clic: genera una nuova palette casuale ---
-function mousePressed() {
-  RED.h = random(360);
-  CORAL.h = (RED.h + 25) % 360;
-  PURPLE.h = (RED.h + 55) % 360;
-
-  initialHue = RED.h;
-  colors = createColors();
-  redraw();
-}
-
-// --- trascinamento: modifica tonalità e dimensione dei rombi ---
 function mouseDragged() {
-  initialHue = (RED.h + map(mouseX, 0, width, -30, 30) + 360) % 360;
-  diamondRadius = map(mouseX, 0, width,
-    DIAMOND_RADIUS_MIN, DIAMOND_RADIUS_MAX, true);
+  updateDiamondSize();
+}
 
+// Clic: cambia palette
+function mousePressed() {
+  currentPalette = (currentPalette + 1) % PALETTE_VARIATIONS.length;
   colors = createColors();
   redraw();
 }
+
+// Cursore
+function mouseOver() {
+  cursor(HAND);
+}
+
+function mouseOut() {
+  cursor(ARROW);
+}
+
+
+
+
