@@ -15,6 +15,7 @@ diventa casuale e le altre tinte si ricavano da esso.
 Lo spostamento del mouse conserva i rapporti fra le tinte.
 */
 
+
 // Dimensioni tela
 let canvasWidth = 600;
 let canvasHeight = 600;
@@ -63,7 +64,7 @@ let PALETTE_VARIATIONS = [
 let colors;
 let currentPalette = 0;
 let variazioneCasuale = 0;
-let diamondRadius = 0.59;
+let diamondRadius = 1;
 let initialHue;
 
 // Inizializzazione
@@ -87,14 +88,24 @@ function draw() {
 
   colors = createColors();
 
-  // Dimensione dei rombi in base alla posizione verticale
-  // In alto si incontrano, in basso si separano
-  diamondRadius = map(
-    constrain(mouseY, 0, height),
+  // Dimensione dei rombi: movimento rapido e fluido
+  let mousePosition = constrain(mouseY, height * 0.25, height * 0.75);
+
+  let movement = map(
+    mousePosition,
+    height * 0.25,
+    height * 0.75,
     0,
-    height,
+    1
+  );
+
+  // Interpolazione morbida
+  movement = movement * movement * (3 - 2 * movement);
+
+  diamondRadius = lerp(
     DIAMOND_RADIUS_MAX,
-    DIAMOND_RADIUS_MIN
+    DIAMOND_RADIUS_MIN,
+    movement
   );
 
   background(colors.W);
