@@ -15,19 +15,14 @@ diventa casuale e le altre tinte si ricavano da esso.
 Lo spostamento del mouse conserva i rapporti fra le tinte.
 */
 
-
 // Dimensioni tela
-let canvasWidth = 600
+let canvasWidth = 600;
 let canvasHeight = 600;
 
 // Parametri dell'opera
 let SQUARES_PER_SIDE = 8;
-let DIAMOND_RADIUS_MIN = 0.44;
-let DIAMOND_RADIUS_MAX = 0.74;
-
-// Punto di riferimento del mouse
-let cx = 300;
-let cy = 250;
+let DIAMOND_RADIUS_MIN = 0.65;
+let DIAMOND_RADIUS_MAX = 1;
 
 // Legenda dei colori:
 // R = rosso
@@ -69,6 +64,7 @@ let colors;
 let currentPalette = 0;
 let variazioneCasuale = 0;
 let diamondRadius = 0.59;
+let initialHue;
 
 // Inizializzazione
 function setup() {
@@ -77,14 +73,30 @@ function setup() {
   noStroke();
 
   variazioneCasuale = random(-10, 10);
+  initialHue = RED.h;
   colors = createColors();
-
-  updateMouse();
-  noLoop();
 }
 
 // Disegno
 function draw() {
+
+  // Variazione cromatica in base alla posizione orizzontale
+  initialHue = (
+    RED.h + map(constrain(mouseX, 0, width), 0, width, -15, 15) + 360
+  ) % 360;
+
+  colors = createColors();
+
+  // Dimensione dei rombi in base alla posizione verticale
+  // In alto si incontrano, in basso si separano
+  diamondRadius = map(
+    constrain(mouseY, 0, height),
+    0,
+    height,
+    DIAMOND_RADIUS_MAX,
+    DIAMOND_RADIUS_MIN
+  );
+
   background(colors.W);
   drawArtwork();
 }
@@ -97,7 +109,8 @@ function createColors() {
     return color(
       base.l,
       base.c,
-      (base.h + shift + variazioneCasuale + 360) % 360
+      (base.h + shift + initialHue - RED.h +
+        variazioneCasuale + 360) % 360
     );
   }
 
@@ -142,48 +155,11 @@ function drawArtwork() {
   }
 }
 
-// Coordinate polari e movimento dei rombi
-function updateMouse() {
-  let distanza = dist(mouseX, mouseY, cx, cy);
-  let angolo = atan2(mouseY - cy, mouseX - cx);
-
-  // Dimensione dei rombi in base alla posizione verticale
-  diamondRadius = map(
-    constrain(mouseY, 0, height),
-    0,
-    height,
-    DIAMOND_RADIUS_MIN,
-    DIAMOND_RADIUS_MAX
-  );
-
-  redraw();
-}
-
-// Movimento del mouse
-function mouseMoved() {
-  updateMouse();
-}
-
-function mouseDragged() {
-  updateMouse();
-}
-
 // Cambio palette con il clic
 function mousePressed() {
   currentPalette = (currentPalette + 1) % PALETTE_VARIATIONS.length;
   colors = createColors();
-  redraw();
 }
-
-// Cursore
-function mouseOver() {
-  cursor(HAND);
-}
-
-function mouseOut() {
-  cursor(ARROW);
-}
-
 
 
 
