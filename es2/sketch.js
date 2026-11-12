@@ -22,7 +22,7 @@ let canvasHeight = 600;
 
 // Parametri dell'opera
 let SQUARES_PER_SIDE = 8;
-let DIAMOND_RADIUS_MIN = 0.65;
+let DIAMOND_RADIUS_MIN = 0.01;
 let DIAMOND_RADIUS_MAX = 1;
 
 // Legenda dei colori:
@@ -83,18 +83,18 @@ function draw() {
 
   // Variazione cromatica in base alla posizione orizzontale
   initialHue = (
-    RED.h + map(constrain(mouseX, 0, width), 0, width, -15, 15) + 360
+    RED.h + map(constrain(mouseX, 0, width), 0, width, -12, 12) + 360
   ) % 360;
 
   colors = createColors();
 
-  // Dimensione dei rombi: movimento rapido e fluido
-  let mousePosition = constrain(mouseY, height * 0.25, height * 0.75);
+  // Dimensione dei rombi in base alla posizione verticale del mouse
+  let mousePosition = constrain(mouseY, height * 0.20, height * 0.80);
 
   let movement = map(
     mousePosition,
-    height * 0.25,
-    height * 0.75,
+    height * 0.20,
+    height * 0.80,
     0,
     1
   );
@@ -102,6 +102,7 @@ function draw() {
   // Interpolazione morbida
   movement = movement * movement * (3 - 2 * movement);
 
+  // I rombi si restringono e si ingrandiscono con il mouse
   diamondRadius = lerp(
     DIAMOND_RADIUS_MAX,
     DIAMOND_RADIUS_MIN,
@@ -171,7 +172,3 @@ function mousePressed() {
   currentPalette = (currentPalette + 1) % PALETTE_VARIATIONS.length;
   colors = createColors();
 }
-
-
-
-
